@@ -47,4 +47,5 @@ def installation_webhook(installation_id, user_id):
     InstallationNotifier.run(
         install=install,
         user=user,
+        action='created',
     )

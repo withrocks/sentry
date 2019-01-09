@@ -23,5 +23,9 @@ class SentryAppInstallationDetailsEndpoint(SentryAppInstallationBaseEndpoint):
                             actor=request.user):
             return Response(status=404)
 
-        Destroyer.run(install=installation)
+        Destroyer.run(
+            install=installation,
+            user=request.user,
+            action='deleted',
+        )
         return Response(status=204)
