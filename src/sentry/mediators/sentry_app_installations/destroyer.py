@@ -24,5 +24,6 @@ class Destroyer(Mediator):
         InstallationNotifier.run(
             install=self.install,
             user=self.user,
+            action='deleted',
         )
         self.install.delete()
