@@ -4,7 +4,7 @@ from rest_framework import serializers
 from rest_framework.serializers import Serializer, ValidationError
 
 from sentry.models import ApiScopes
-from sentry.models.sentryapp import VALID_EVENTS
+from sentry.models.sentryapp import VALID_EVENT_RESOURCES
 
 
 class ApiScopesField(serializers.WritableField):
@@ -20,9 +20,9 @@ class ApiScopesField(serializers.WritableField):
 
 class EventListField(serializers.WritableField):
     def validate(self, data):
-        if not set(data).issubset(VALID_EVENTS):
+        if not set(data).issubset(VALID_EVENT_RESOURCES):
             raise ValidationError(u'Invalid event subscription: {}'.format(
-                ', '.join(set(data).difference(VALID_EVENTS))
+                ', '.join(set(data).difference(VALID_EVENT_RESOURCES))
             ))
 
 

@@ -1,7 +1,5 @@
 from __future__ import absolute_import
 
-import six
-
 from datetime import datetime
 from mock import patch
 
@@ -41,23 +39,6 @@ class TestServiceHooks(TestCase):
             project=self.project,
             events=('issue.created', ),
         )
-
-    @patch('sentry.tasks.servicehooks.safe_urlopen')
-    def test_group_created_sends_service_hook(self, safe_urlopen):
-        with self.tasks():
-            issue = self.create_group(project=self.project)
-
-        data = faux(safe_urlopen).kwargs['data']
-        assert data['action'] == 'created'
-        assert data['installation']['uuid'] == self.install.uuid
-        assert data['data']['id'] == six.text_type(issue.id)
-        assert faux(safe_urlopen).kwarg_equals('headers', DictContaining(
-            'Content-Type',
-            'Request-ID',
-            'Sentry-Hook-Resource',
-            'Sentry-Hook-Timestamp',
-            'Sentry-Hook-Signature',
-        ))
 
     @patch('sentry.tasks.servicehooks.safe_urlopen')
     def test_verify_sentry_hook_signature(self, safe_urlopen):
