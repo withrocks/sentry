@@ -64,7 +64,7 @@ class ProcessingIssueManager(BaseManager):
         return RawEvent.objects.filter(
             project_id__in=project_ids,
             eventprocessingissue__isnull=True,
-        )
+        ).order_by('id')
 
     def find_resolved(self, project_id, limit=100):
         """Returns a list of raw events that generally match the given
@@ -73,7 +73,7 @@ class ProcessingIssueManager(BaseManager):
         if there are more.
         """
         from sentry.models import RawEvent
-        rv = list(self.find_resolved_queryset([project_id])[:limit])
+        rv = list(self.find_resolved_queryset([project_id])[:limit + 1])
         if len(rv) > limit:
             rv = rv[:limit]
             has_more = True
