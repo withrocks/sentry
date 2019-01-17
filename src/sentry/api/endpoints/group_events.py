@@ -10,9 +10,12 @@ from rest_framework.response import Response
 from sentry import quotas, tagstore
 from sentry.api.base import DocSection, EnvironmentMixin
 from sentry.api.bases import GroupEndpoint
+from sentry.api.exceptions import ResourceDoesNotExist
+from sentry.api.helpers.environments import get_environments
 from sentry.api.serializers import serialize
 from sentry.api.paginator import DateTimePaginator
-from sentry.models import Environment, Event, Group
+from sentry.api.utils import get_date_range_from_params
+from sentry.models import Event, Group
 from sentry.search.utils import parse_query
 from sentry.utils.apidocs import scenario, attach_scenarios
 from sentry.search.utils import InvalidQuery
@@ -51,11 +54,8 @@ class GroupEventsEndpoint(GroupEndpoint, EnvironmentMixin):
         events = Event.objects.filter(group_id=group.id)
 
         try:
-            environment = self._get_environment_from_request(
-                request,
-                group.project.organization_id,
-            )
-        except Environment.DoesNotExist:
+            environments = get_environments(request, group.project.organization)
+        except ResourceDoesNotExist:
             return respond(events.none())
 
         raw_query = request.GET.get('query')
@@ -72,16 +72,24 @@ class GroupEventsEndpoint(GroupEndpoint, EnvironmentMixin):
             query = None
             tags = {}
 
-        if environment is not None:
-            if 'environment' in tags and tags['environment'] != environment.name:
-                # An event can only be associated with a single
-                # environment, so if the environment associated with
-                # the request is different than the environment
-                # provided as a tag lookup, the query cannot contain
-                # any valid results.
-                return respond(events.none())
+        if environments:
+            env_names = set(env.name for env in environments)
+            if 'environment' in tags:
+                # If a single environment was passed as part of the query, then
+                # we'll just search for that individual environment in this
+                # query, even if more are selected.
+
+                if tags['environment'] not in env_names:
+                    # An event can only be associated with a single
+                    # environment, so if the environments associated with
+                    # the request don't contain the environment provided as a
+                    # tag lookup, the query cannot contain any valid results.
+                    return respond(events.none())
             else:
-                tags['environment'] = environment.name
+                # XXX: Handle legacy backends here. Just store environment as a
+                # single tag if we only have one so that we don't break existing
+                # usage.
+                tags['environment'] = list(env_names) if len(env_names) > 1 else env_names.pop()
 
         if query:
             q = Q(message__icontains=query)
@@ -91,6 +99,8 @@ class GroupEventsEndpoint(GroupEndpoint, EnvironmentMixin):
 
             events = events.filter(q)
 
+        start, end = get_date_range_from_params(request.GET, optional=True)
+
         # TODO currently snuba can be used to get this filter of event_ids matching
         # the search tags, which is then used to further filter a postgres QuerySet
         # Ideally we would just use snuba to completely replace the fetching of the
@@ -99,14 +109,22 @@ class GroupEventsEndpoint(GroupEndpoint, EnvironmentMixin):
             event_filter = tagstore.get_group_event_filter(
                 group.project_id,
                 group.id,
-                environment.id if environment is not None else None,
+                [env.id for env in environments],
                 tags,
+                start,
+                end,
             )
 
             if not event_filter:
                 return respond(events.none())
 
             events = events.filter(**event_filter)
+
+        # Filter start/end here in case we didn't filter by tags at all
+        if start:
+            events = events.filter(datetime__gte=start)
+        if end:
+            events = events.filter(datetime__lte=end)
 
         # filter out events which are beyond the retention period
         retention = quotas.get_event_retention(organization=group.project.organization)

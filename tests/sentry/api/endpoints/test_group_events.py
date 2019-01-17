@@ -4,6 +4,7 @@ import six
 
 from datetime import timedelta
 from django.utils import timezone
+from freezegun import freeze_time
 
 from sentry import tagstore
 from sentry.models import Environment
@@ -254,3 +255,43 @@ class GroupEventsTest(APITestCase):
                 six.text_type(event_2.id),
             ]
         )
+
+    @freeze_time()
+    def test_date_filters(self):
+        self.login_as(user=self.user)
+
+        project = self.create_project()
+        group = self.create_group(project=project)
+        event_1 = self.create_event(
+            'a' * 32,
+            group=group,
+            datetime=timezone.now() - timedelta(days=2),
+        )
+        event_2 = self.create_event('b' * 32, group=group)
+
+        response = self.client.get(
+            u'/api/0/issues/{}/events/'.format(group.id),
+            data={
+                'statsPeriod': '3d',
+            },
+        )
+
+        assert response.status_code == 200, response.content
+        assert len(response.data) == 2
+        assert sorted(map(lambda x: x['id'], response.data)) == sorted(
+            [
+                six.text_type(event_1.id),
+                six.text_type(event_2.id),
+            ]
+        )
+
+        response = self.client.get(
+            u'/api/0/issues/{}/events/'.format(group.id),
+            data={
+                'statsPeriod': '1d',
+            },
+        )
+
+        assert response.status_code == 200, response.content
+        assert len(response.data) == 1
+        assert response.data[0]['id'] == six.text_type(event_2.id)
