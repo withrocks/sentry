@@ -386,4 +386,24 @@ if (IS_PRODUCTION) {
   });
 }
 
-module.exports = [appConfig, legacyCssConfig];
+const configs = {appConfig, legacyCssConfig};
+
+/**
+ * The webpack configuration may be overridden by specifying
+ * SENTRY_WEBPACK_LAYER to a module which exports a function that accepts an
+ * array of webpack configuration objects and applies mutates to the
+ * configurations.
+ *
+ * sentry.io's private codebase makes use of this functionality to insert
+ * additional functionality into the Sentry frontend application.
+ */
+if (env.SENTRY_WEBPACK_LAYER) {
+  const options = {
+    sentryStaticPrefix: staticPrefix,
+    sentryPath: __dirname,
+  };
+
+  require(env.SENTRY_WEBPACK_LAYER)(configs, options);
+}
+
+module.exports = Object.values(configs);
