@@ -1,10 +1,15 @@
 from __future__ import absolute_import
-
+from rest_framework import serializers
 from sentry.api.bases.organization import (
     OrganizationEndpoint
 )
 from sentry.api.exceptions import ResourceDoesNotExist
-from sentry.models import Dashboard
+from sentry.api.serializers.rest_framework.json import JSONField
+from sentry.api.serializers.rest_framework.list import ListField
+from sentry.api.fields.user import UserField
+from sentry.api.bases.discoversavedquery import DiscoverSavedQuerySerializer
+
+from sentry.models import Dashboard, WidgetDisplayTypes, WidgetDataSourceTypes
 
 
 class OrganizationDashboardEndpoint(OrganizationEndpoint):
@@ -24,15 +29,6 @@ class OrganizationDashboardEndpoint(OrganizationEndpoint):
             id=dashboard_id,
             organization_id=organization.id
         )
-
-
-from rest_framework import serializers
-from sentry.models import WidgetDisplayTypes, WidgetDataSourceTypes
-
-from sentry.api.serializers.rest_framework.json import JSONField
-from sentry.api.serializers.rest_framework.list import ListField
-from sentry.api.fields.user import UserField
-from sentry.api.bases.discoversavedquery import DiscoverSavedQuerySerializer
 
 
 class WidgetDataSourceSerializer(serializers.Serializer):
