@@ -17,11 +17,10 @@ import {t, tct} from 'app/locale';
 import {Panel, PanelBody} from 'app/components/panels';
 import EmptyStateWarning from 'app/components/emptyStateWarning';
 import withEnvironmentInQueryString from 'app/utils/withEnvironmentInQueryString';
-
-import ReleaseLanding from 'app/views/releases/list/projectReleases/releaseLanding';
-import ReleaseProgress from 'app/views/releases/list/projectReleases/releaseProgress';
 import PageHeading from 'app/components/pageHeading';
 
+import ReleaseLanding from '../shared/releaseLanding';
+import ReleaseProgress from './releaseProgress';
 import ReleaseEmptyState from './releaseEmptyState';
 import ReleaseList from '../shared/releaseList';
 import ReleaseListHeader from '../shared/releaseListHeader';
