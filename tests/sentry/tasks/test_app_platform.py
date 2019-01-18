@@ -30,4 +30,4 @@ class TestAppPlatformTasks(TestCase):
         with self.tasks():
             installation_webhook(self.install.id, self.user.id)
 
-        run.assert_called_once_with(install=self.install, user=self.user)
+        run.assert_called_once_with(install=self.install, user=self.user, action='created')
