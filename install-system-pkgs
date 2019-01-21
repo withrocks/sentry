@@ -1,0 +1,28 @@
+#!/bin/bash
+
+# Installs packages either with brew or apt.
+
+function install_package {
+    package_name=$1
+    if dpkg -s $package_name 2>&1 > /dev/null; then
+        echo "$package_name already exists"
+    else
+        echo "Installing dependency $package_name"
+        sudo apt install $package_name
+    fi
+}
+
+function install_using_apt {
+    install_package libxmlsec1-dev
+    install_package libgeoip-dev
+}
+
+if command -v brew 2>&1 > /dev/null; then
+    echo "--> Installing system packages (from Brewfile)";
+    brew bundle
+elif command -v apt 2>&1 > /dev/null; then
+    echo "--> Installing system packages (using apt)";
+    install_using_apt
+else
+    echo 'WARNING: homebrew (or apt) not found or brew bundle failed - skipping system dependencies.';
+fi

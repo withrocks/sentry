@@ -54,8 +54,7 @@ node-version-check:
 	@test "$$(node -v)" = v"$$(cat .nvmrc)" || (echo 'node version does not match .nvmrc. Recommended to use https://github.com/creationix/nvm'; exit 1)
 
 install-system-pkgs: node-version-check
-	@echo "--> Installing system packages (from Brewfile)"
-	@command -v brew 2>&1 > /dev/null && brew bundle || (echo 'WARNING: homebrew not found or brew bundle failed - skipping system dependencies.')
+	@./install-system-pkgs
 	@echo "--> Installing yarn 1.3.2 (via npm)"
 	@npm install -g "yarn@1.3.2"
 
